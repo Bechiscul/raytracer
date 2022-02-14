@@ -1,4 +1,7 @@
-use crate::window::{Color, Framebuffer};
+use crate::{
+    scene::Scene,
+    window::{Color, Framebuffer},
+};
 use nalgebra::{vector, Vector2, Vector3};
 
 pub struct Ray {
@@ -15,27 +18,16 @@ impl<'a> Raytracer<'a> {
         Self { framebuffer }
     }
 
-    pub fn draw(&mut self, f: impl Fn(Vector2<usize>) -> Color) {
+    pub fn draw_scene(scene: &Scene) {}
+
+    pub fn draw(&mut self, f: impl Fn(Vector2<usize>) -> Option<Color>) {
         for y in 0..self.framebuffer.height() {
             for x in 0..self.framebuffer.width() {
                 let pos = vector![x, y];
-                self.framebuffer.set_pixel(pos, f(pos));
+                if let Some(color) = f(pos) {
+                    self.framebuffer.set_pixel(pos, color);
+                }
             }
         }
-    }
-}
-
-pub trait Shape {
-    fn intersect(r: &Ray) -> bool;
-}
-
-pub struct Sphere {
-    center: Vector3<f32>,
-    radius: f32,
-}
-
-impl Sphere {
-    pub fn new(center: Vector3<f32>, radius: f32) -> Self {
-        Self { center, radius }
     }
 }
