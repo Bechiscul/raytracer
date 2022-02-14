@@ -46,6 +46,7 @@ impl Window {
     }
 }
 
+#[derive(Debug, Default, Clone, PartialEq)]
 pub struct Framebuffer {
     buffer: Vec<u32>,
     width: usize,

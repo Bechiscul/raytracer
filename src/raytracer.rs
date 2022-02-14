@@ -5,8 +5,8 @@ use crate::{
 use nalgebra::{vector, Vector2, Vector3};
 
 pub struct Ray {
-    origo: Vector3<usize>,
-    direction: Vector3<f32>,
+    pub origin: Vector3<f32>,
+    pub direction: Vector3<f32>,
 }
 
 pub struct Raytracer<'a> {
@@ -18,7 +18,18 @@ impl<'a> Raytracer<'a> {
         Self { framebuffer }
     }
 
-    pub fn draw_scene(scene: &Scene) {}
+    pub fn draw_scene(&mut self, scene: &Scene) {
+        let width = self.framebuffer.width();
+        let height = self.framebuffer.height();
+
+        self.draw(|pos| {
+            Some(Color::from_f32(vector![
+                pos[1] as f32 / height as f32,
+                pos[0] as f32 / width as f32,
+                1.0
+            ]))
+        });
+    }
 
     pub fn draw(&mut self, f: impl Fn(Vector2<usize>) -> Option<Color>) {
         for y in 0..self.framebuffer.height() {

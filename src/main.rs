@@ -10,10 +10,15 @@ mod window;
 const WIDTH: usize = 1000;
 const HEIGHT: usize = (WIDTH as f32 / (16.0 / 9.0)) as usize;
 
+// Optimization techniques:
+// - Multithreading
+// - Sort-by-depth algorithm
+// - Tagged-unions.
+
 fn main() {
     let mut window = Window::new("Raytracer", WIDTH, HEIGHT);
 
-    let mut scene = Scene::default();
+    let scene = Scene::default();
     // scene.add_object()
 
     let mut raytracer = Raytracer::new(window.framebuffer_mut());
