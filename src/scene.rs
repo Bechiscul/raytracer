@@ -1,4 +1,4 @@
-use nalgebra::{Matrix4, Vector3};
+use nalgebra::{vector, Matrix4, Vector3};
 
 use crate::raytracer::Ray;
 
@@ -10,6 +10,16 @@ pub struct Scene {
 }
 
 impl Scene {
+    pub fn new() -> Self {
+        Self {
+            camera: Camera {
+                origin: vector![0.0, 0.0, 0.0],
+                fov: (60.0f32).to_radians(),
+            },
+            ..Default::default()
+        }
+    }
+
     pub fn set_camera(&mut self, camera: Camera) {
         self.camera = camera;
     }
@@ -41,8 +51,8 @@ impl Scene {
 
 #[derive(Debug, Default, Clone, Copy, PartialEq)]
 pub struct Camera {
-    position: Vector3<f32>,
-    projection: Matrix4<f32>,
+    pub origin: Vector3<f32>,
+    pub fov: f32,
 }
 
 #[derive(Debug, Default, Clone, Copy, PartialEq)]
@@ -68,21 +78,37 @@ pub trait Object {
     /// let ray = Ray::default();
     /// println!("Intersects: {}", sphere.intersects(&ray).0);
     /// ```
-    fn intersects(&self, ray: &Ray) -> bool;
+    fn intersect(&self, ray: &Ray) -> Option<Hit>;
 }
 
-struct Sphere {
-    center: Vector3<f32>,
-    radius: f32,
+#[derive(Debug, Default, Clone, Copy, PartialEq)]
+pub struct Hit {
+    pub t: f32,
+    pub normal: Vector3<f32>,
+}
+
+#[derive(Debug, Default, Clone, Copy, PartialEq)]
+pub struct Sphere {
+    pub center: Vector3<f32>,
+    pub radius: f32,
 }
 
 impl Object for Sphere {
-    fn intersects(&self, ray: &Ray) -> bool {
+    fn intersect(&self, ray: &Ray) -> Option<Hit> {
         // Koordinaterne for cirklens centrum indsættes i ligningen for kuglen.
         // https://www.webmatematik.dk/lektioner/matematik-a/vektorer-i-3d/skaering-mellem-linje-og-kugle
-        let mut co = ray.origin - self.center;
-        co[2] -= self.radius.powi(2);
+        let oc = ray.origin - self.center;
+        let a = ray.direction.dot(&ray.direction);
+        let b = 2.0 * oc.dot(&ray.direction);
+        let c = oc.dot(&oc) - self.radius.powi(2);
+        let discriminant = b.powi(2) - 4.0 * a * c;
 
-        true
+        if discriminant <= 0.0 {
+            return None;
+        }
+
+        let t = (-b - discriminant.sqrt()) / (2.0 * a);
+        let normal = (ray.at(t) - self.center).normalize();
+        Some(Hit { t, normal })
     }
 }
