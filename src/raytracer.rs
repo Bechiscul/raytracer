@@ -1,7 +1,7 @@
 use std::f32::consts::PI;
 
 use crate::{
-    scene::{Camera, Object, Scene, Sphere},
+    scene::{Camera, Hit, Material, Object, Scene, Sphere},
     window::{Color, Framebuffer},
 };
 use nalgebra::{vector, UnitVector3, Vector2, Vector3};
@@ -20,37 +20,33 @@ impl Ray {
 
 pub struct Raytracer<'a> {
     framebuffer: &'a mut Framebuffer,
+    background: Vector3<f32>,
 }
 
 impl<'a> Raytracer<'a> {
     pub fn new(framebuffer: &'a mut Framebuffer) -> Self {
-        Self { framebuffer }
+        Self {
+            framebuffer,
+            background: vector![1.0, 1.0, 1.0],
+        }
     }
 
     pub fn draw_scene(&mut self, scene: &Scene) {
-        let sphere = Sphere {
-            center: vector![-3.0, 0.0, -16.0],
-            radius: 2.0,
-        };
-
+        let bg = self.background;
         self.draw(|pixel, (w, h)| {
-            let ray = Self::cast(&scene, pixel, w, h);
+            let pos = vector![pixel[0] as f32, pixel[1] as f32];
+            let ray = Self::cast(*scene.camera(), pos, w, h);
+            if let Some((hit, mat)) = Self::scene_intersect(scene, &ray) {
+                let mut diffuse_intensity = 0.0;
+                scene.lights().for_each(|light| {
+                    let direction = (light.position - hit.p).normalize();
+                    diffuse_intensity += light.intensity * direction.dot(&hit.normal).max(0.0);
+                });
 
-            // scene.objects().reduce(|accum, item| accum);
-
-            // println!("{:?}", ray);
-
-            // Finds the closest hit.
-            let hit = scene
-                .objects()
-                .filter_map(|object| object.intersect(&ray))
-                .reduce(|accum, item| if item.t < accum.t { item } else { accum });
-
-            if let Some(hit) = hit {
-                return Some(Color::from_f32(0.5 * hit.normal.add_scalar(1.0)));
+                return Some(Color::from_f32(mat.diffuse * diffuse_intensity.min(1.0)));
             }
 
-            None
+            Some(Color::from_f32(bg))
         });
     }
 
@@ -69,21 +65,28 @@ impl<'a> Raytracer<'a> {
     }
 
     /// Casts a ray from the camera into a pixel on the screen.
-    fn cast(scene: &Scene, pixel: Vector2<usize>, w: usize, h: usize) -> Ray {
+    fn cast(camera: Camera, pos: Vector2<f32>, w: usize, h: usize) -> Ray {
         let (w, h) = (w as f32, h as f32);
-        let Camera { origin, fov } = *scene.camera();
+        let Camera { origin, fov } = camera;
         let aspect_ratio = w / h;
 
         // Convert fov to radians
         // let fov = fov * (PI / 180.0);
 
         // TODO(Bech): Forklar algoritme / credit.
-        let x = (2.0 * (pixel[0] as f32 + 0.5) / w - 1.0) * (fov / 2.0).tan() * aspect_ratio;
-        let y = -(2.0 * (pixel[1] as f32 + 0.5) / h - 1.0) * (fov / 2.0).tan();
+        let x = (2.0 * (pos[0] + 0.5) / w - 1.0) * (fov / 2.0).tan() * aspect_ratio;
+        let y = -(2.0 * (pos[1] + 0.5) / h - 1.0) * (fov / 2.0).tan();
         let z = -1.0;
 
         // It is common convention that the camera faces in the negative z-direction.
         let direction = vector![x, y, z].normalize();
         Ray { origin, direction }
+    }
+
+    fn scene_intersect(scene: &Scene, ray: &Ray) -> Option<(Hit, Material)> {
+        scene
+            .objects()
+            .filter_map(|item| item.0.intersect(ray).map(|hit| (hit, item.1)))
+            .reduce(|accum, item| if item.0.t < accum.0.t { item } else { accum })
     }
 }

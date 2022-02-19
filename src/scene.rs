@@ -1,11 +1,11 @@
 use nalgebra::{vector, Matrix4, Vector3};
 
-use crate::raytracer::Ray;
+use crate::{raytracer::Ray, window::Color};
 
 #[derive(Default)]
 pub struct Scene {
     camera: Camera,
-    objects: Vec<Box<dyn Object>>,
+    objects: Vec<(Box<dyn Object>, Material)>,
     lights: Vec<Light>,
 }
 
@@ -28,12 +28,12 @@ impl Scene {
         &self.camera
     }
 
-    pub fn add_object(&mut self, object: impl Object + 'static) {
-        self.objects.push(Box::new(object))
+    pub fn add_object(&mut self, object: impl Object + 'static, mat: Material) {
+        self.objects.push((Box::new(object), mat))
     }
 
-    pub fn objects(&self) -> impl Iterator<Item = &dyn Object> {
-        self.objects.iter().map(|o| o.as_ref())
+    pub fn objects(&self) -> impl Iterator<Item = (&dyn Object, Material)> {
+        self.objects.iter().map(|v| (v.0.as_ref(), v.1))
     }
 
     pub fn lights(&self) -> impl Iterator<Item = &Light> {
@@ -57,7 +57,13 @@ pub struct Camera {
 
 #[derive(Debug, Default, Clone, Copy, PartialEq)]
 pub struct Light {
-    position: Vector3<f32>,
+    pub position: Vector3<f32>,
+    pub intensity: f32,
+}
+
+#[derive(Debug, Default, Clone, Copy, PartialEq)]
+pub struct Material {
+    pub diffuse: Vector3<f32>,
 }
 
 pub trait Object {
@@ -84,6 +90,7 @@ pub trait Object {
 #[derive(Debug, Default, Clone, Copy, PartialEq)]
 pub struct Hit {
     pub t: f32,
+    pub p: Vector3<f32>,
     pub normal: Vector3<f32>,
 }
 
@@ -108,7 +115,8 @@ impl Object for Sphere {
         }
 
         let t = (-b - discriminant.sqrt()) / (2.0 * a);
-        let normal = (ray.at(t) - self.center).normalize();
-        Some(Hit { t, normal })
+        let p = ray.at(t);
+        let normal = (p - self.center).normalize();
+        Some(Hit { t, p, normal })
     }
 }

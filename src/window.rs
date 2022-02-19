@@ -106,7 +106,7 @@ impl Color {
     ///
     /// Panics if the float is not clamped between [0.0, 1.0].
     pub fn from_f32(color: Vector3<f32>) -> Self {
-        let _ = color.map(|component| assert!(component >= 0.0 && component <= 1.0));
+        let _ = color.map(|component| assert!((0.0..=1.0).contains(&component)));
         unsafe { Self::from_f32_unchecked(color) }
     }
 
