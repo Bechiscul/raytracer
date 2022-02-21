@@ -1,8 +1,6 @@
-use std::f32::consts::PI;
-
 use crate::{
-    scene::{Camera, Hit, Material, Object, Scene, Sphere},
-    window::{Color, Framebuffer},
+    scene::{Camera, Hit, Material, Scene, Sphere},
+    window::Framebuffer,
 };
 use nalgebra::{vector, UnitVector3, Vector2, Vector3};
 
@@ -20,19 +18,14 @@ impl Ray {
 
 pub struct Raytracer<'a> {
     framebuffer: &'a mut Framebuffer,
-    background: Vector3<f32>,
 }
 
 impl<'a> Raytracer<'a> {
     pub fn new(framebuffer: &'a mut Framebuffer) -> Self {
-        Self {
-            framebuffer,
-            background: vector![1.0, 1.0, 1.0],
-        }
+        Self { framebuffer }
     }
 
     pub fn draw_scene(&mut self, scene: &Scene) {
-        let bg = self.background;
         self.draw(|pixel, (w, h)| {
             let pos = vector![pixel[0] as f32, pixel[1] as f32];
             let ray = Self::cast(*scene.camera(), pos, w, h);
@@ -43,14 +36,14 @@ impl<'a> Raytracer<'a> {
                     diffuse_intensity += light.intensity * direction.dot(&hit.normal).max(0.0);
                 });
 
-                return Some(Color::from_f32(mat.diffuse * diffuse_intensity.min(1.0)));
+                return Some(mat.diffuse * diffuse_intensity.min(1.0));
             }
 
-            Some(Color::from_f32(bg))
+            None
         });
     }
 
-    pub fn draw(&mut self, f: impl Fn(Vector2<usize>, (usize, usize)) -> Option<Color>) {
+    pub fn draw(&mut self, f: impl Fn(Vector2<usize>, (usize, usize)) -> Option<Vector3<f32>>) {
         let width = self.framebuffer.width();
         let height = self.framebuffer.height();
 
@@ -69,9 +62,6 @@ impl<'a> Raytracer<'a> {
         let (w, h) = (w as f32, h as f32);
         let Camera { origin, fov } = camera;
         let aspect_ratio = w / h;
-
-        // Convert fov to radians
-        // let fov = fov * (PI / 180.0);
 
         // TODO(Bech): Forklar algoritme / credit.
         let x = (2.0 * (pos[0] + 0.5) / w - 1.0) * (fov / 2.0).tan() * aspect_ratio;

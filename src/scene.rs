@@ -1,6 +1,6 @@
-use nalgebra::{vector, Matrix4, Vector3};
+use nalgebra::{vector, Vector3};
 
-use crate::{raytracer::Ray, window::Color};
+use crate::raytracer::Ray;
 
 #[derive(Default)]
 pub struct Scene {

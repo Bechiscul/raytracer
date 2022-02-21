@@ -55,21 +55,21 @@ pub struct Framebuffer {
 
 impl Framebuffer {
     pub fn new(width: usize, height: usize) -> Self {
+        Self::with_color(width, height, Vector3::<f32>::default())
+    }
+
+    pub fn with_color(width: usize, height: usize, color: Vector3<f32>) -> Self {
         Self {
-            buffer: vec![0; width * height],
+            buffer: { vec![Self::from_vec3_rgb(color); width * height] },
             width,
             height,
         }
     }
 
-    pub fn set_pixel(&mut self, pos: Vector2<usize>, color: Color) {
+    pub fn set_pixel(&mut self, pos: Vector2<usize>, color: Vector3<f32>) {
         if let Some(pixel) = self.buffer.get_mut(pos[0] + pos[1] * self.width) {
-            *pixel = color.into();
+            *pixel = Self::from_vec3_rgb(color);
         }
-    }
-
-    pub fn clear(&mut self, color: Color) {
-        self.buffer = vec![color.into(); self.width * self.height];
     }
 
     pub fn width(&self) -> usize {
@@ -79,64 +79,18 @@ impl Framebuffer {
     pub fn height(&self) -> usize {
         self.height
     }
+
+    fn from_vec3_rgb(color: Vector3<f32>) -> u32 {
+        let r = (color[0] * 255.0).round() as u32;
+        let g = (color[1] * 255.0).round() as u32;
+        let b = (color[2] * 255.0).round() as u32;
+        (r << 16) | (g << 8) | b
+    }
 }
 
 impl Deref for Framebuffer {
     type Target = Vec<u32>;
     fn deref(&self) -> &Self::Target {
         &self.buffer
-    }
-}
-
-#[derive(Default, Debug, Clone, Copy, PartialEq, Eq)]
-pub struct Color {
-    r: u8,
-    g: u8,
-    b: u8,
-}
-
-impl Color {
-    pub fn new(r: u8, g: u8, b: u8) -> Self {
-        Self { r, g, b }
-    }
-
-    /// Creates a color from a float clamped between [0.0, 1.0].
-    ///
-    /// # Panics
-    ///
-    /// Panics if the float is not clamped between [0.0, 1.0].
-    pub fn from_f32(color: Vector3<f32>) -> Self {
-        let _ = color.map(|component| assert!((0.0..=1.0).contains(&component)));
-        unsafe { Self::from_f32_unchecked(color) }
-    }
-
-    /// Creates a color from a float clamped between [0.0, 1.0].
-    ///
-    /// # Safety
-    ///
-    /// `color` must be clamped to [0.0, 1.0].
-    pub unsafe fn from_f32_unchecked(color: Vector3<f32>) -> Self {
-        Self {
-            r: (color[0] * 256.0) as u8,
-            g: (color[1] * 256.0) as u8,
-            b: (color[2] * 256.0) as u8,
-        }
-    }
-}
-
-impl From<Vector3<u8>> for Color {
-    fn from(color: Vector3<u8>) -> Self {
-        Color {
-            r: color[0],
-            g: color[1],
-            b: color[2],
-        }
-    }
-}
-
-impl Into<u32> for Color {
-    fn into(self) -> u32 {
-        let (r, g, b) = (self.r as u32, self.g as u32, self.b as u32);
-        r << 16 | g << 8 | b
     }
 }
