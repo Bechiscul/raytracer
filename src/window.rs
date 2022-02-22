@@ -28,21 +28,13 @@ impl Window {
         &mut self.framebuffer
     }
 
-    pub fn update_buffer(&mut self) {
+    pub fn update_w(&mut self) {
         let width = self.framebuffer.width();
         let height = self.framebuffer.height();
 
         self.window
             .update_with_buffer(&self.framebuffer, width, height)
             .unwrap()
-    }
-
-    pub fn update(&mut self) {
-        self.window.update()
-    }
-
-    pub fn is_open(&self) -> bool {
-        self.window.is_open()
     }
 }
 

@@ -1,11 +1,12 @@
+use framebuffer::*;
+use minifb::*;
 use nalgebra::vector;
 use raytracer::*;
 use scene::*;
-use window::*;
 
+mod framebuffer;
 mod raytracer;
 mod scene;
-mod window;
 
 const WIDTH: usize = 1000;
 const HEIGHT: usize = (WIDTH as f32 / (16.0 / 9.0)) as usize;
@@ -15,9 +16,7 @@ const HEIGHT: usize = (WIDTH as f32 / (16.0 / 9.0)) as usize;
 // - Sort-by-depth algorithm
 // - Tagged-unions.
 
-fn main() {
-    let mut window = Window::new("Raytracer", WIDTH, HEIGHT);
-
+fn example_scene() -> Scene {
     let mut scene = Scene::new();
 
     let ivory = Material {
@@ -69,10 +68,19 @@ fn main() {
         intensity: 1.5,
     });
 
-    let mut raytracer = Raytracer::new(window.framebuffer_mut());
-    raytracer.draw_scene(&scene);
+    scene
+}
+
+fn main() {
+    let mut window = Window::new("Raytracer", WIDTH, HEIGHT, WindowOptions::default()).unwrap();
+    let mut fb = Framebuffer::new(WIDTH, HEIGHT);
+
+    let mut raytracer = Raytracer::new(&mut fb);
+    raytracer.draw_scene(&example_scene());
+
+    let _ = window.update_with_buffer(&fb.buffer, fb.width(), fb.height());
 
     while window.is_open() {
-        window.update_buffer()
+        window.update();
     }
 }

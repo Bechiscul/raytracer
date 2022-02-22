@@ -49,6 +49,12 @@ impl Scene {
     }
 }
 
+impl Object for Scene {
+    fn intersect(&self, ray: &Ray) -> Option<Hit> {
+        self.objects.iter().find(|object| object.0.intersect(ray))
+    }
+}
+
 #[derive(Debug, Default, Clone, Copy, PartialEq)]
 pub struct Camera {
     pub origin: Vector3<f32>,

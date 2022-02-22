@@ -1,7 +1,5 @@
-use crate::{
-    scene::{Camera, Hit, Material, Scene, Sphere},
-    window::Framebuffer,
-};
+use crate::framebuffer::Framebuffer;
+use crate::scene::{Camera, Hit, Material, Scene, Sphere};
 use nalgebra::{vector, UnitVector3, Vector2, Vector3};
 
 #[derive(Debug, Default, Clone, Copy, PartialEq)]
@@ -58,19 +56,29 @@ impl<'a> Raytracer<'a> {
     }
 
     /// Casts a ray from the camera into a pixel on the screen.
-    fn cast(camera: Camera, pos: Vector2<f32>, w: usize, h: usize) -> Ray {
-        let (w, h) = (w as f32, h as f32);
-        let Camera { origin, fov } = camera;
-        let aspect_ratio = w / h;
+    // fn cast(camera: Camera, pos: Vector2<f32>, w: usize, h: usize) -> Ray {
+    //     let (w, h) = (w as f32, h as f32);
+    //     let Camera { origin, fov } = camera;
+    //     let aspect_ratio = w / h;
 
-        // TODO(Bech): Forklar algoritme / credit.
-        let x = (2.0 * (pos[0] + 0.5) / w - 1.0) * (fov / 2.0).tan() * aspect_ratio;
-        let y = -(2.0 * (pos[1] + 0.5) / h - 1.0) * (fov / 2.0).tan();
-        let z = -1.0;
+    //     // TODO(Bech): Forklar algoritme / credit.
+    //     let x = (2.0 * (pos[0] + 0.5) / w - 1.0) * (fov / 2.0).tan() * aspect_ratio;
+    //     let y = -(2.0 * (pos[1] + 0.5) / h - 1.0) * (fov / 2.0).tan();
+    //     let z = -1.0;
 
-        // It is common convention that the camera faces in the negative z-direction.
-        let direction = vector![x, y, z].normalize();
-        Ray { origin, direction }
+    //     // It is common convention that the camera faces in the negative z-direction.
+    //     let direction = vector![x, y, z].normalize();
+    //     Ray { origin, direction }
+    // }
+
+    fn cast(ray: &Ray, scene: &Scene, depth: usize, max_depth: usize) -> Option<Vector3<f32>> {
+        if depth > max_depth {
+            return None;
+        }
+
+        if let Some(hit) = Self::scene_intersect(scene, ray);
+
+        scene.lights().for_each(|light| {});
     }
 
     fn scene_intersect(scene: &Scene, ray: &Ray) -> Option<(Hit, Material)> {
