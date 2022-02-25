@@ -1,4 +1,4 @@
-use nalgebra::{vector, Vector3};
+use nalgebra::{vector, Vector3, Vector4};
 
 use crate::raytracer::Ray;
 
@@ -7,6 +7,7 @@ pub struct Scene {
     camera: Camera,
     objects: Vec<(Box<dyn Object>, Material)>,
     lights: Vec<Light>,
+    pub background: Option<Vector3<f32>>,
 }
 
 impl Scene {
@@ -47,6 +48,15 @@ impl Scene {
     pub fn add_light(&mut self, light: Light) {
         self.lights.push(light);
     }
+
+    pub fn intersect(&self, ray: &Ray) -> Option<(Hit, Material)> {
+        let hits = self
+            .objects()
+            .filter_map(|object| object.0.intersect(ray).map(|hit| (hit, object.1)));
+
+        // Find closest hit if any.
+        hits.reduce(|accum, item| if accum.0.t < item.0.t { item } else { accum })
+    }
 }
 
 #[derive(Debug, Default, Clone, Copy, PartialEq)]
@@ -58,12 +68,17 @@ pub struct Camera {
 #[derive(Debug, Default, Clone, Copy, PartialEq)]
 pub struct Light {
     pub position: Vector3<f32>,
-    pub intensity: f32,
+    pub ambient: Vector3<f32>,
+    pub diffuse: Vector3<f32>,
+    pub specular: Vector3<f32>,
 }
 
 #[derive(Debug, Default, Clone, Copy, PartialEq)]
 pub struct Material {
+    pub ambient: Vector3<f32>,
     pub diffuse: Vector3<f32>,
+    pub specular: Vector3<f32>,
+    pub shininess: f32,
 }
 
 pub trait Object {
